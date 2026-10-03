@@ -5,28 +5,16 @@ Aplicação Flask executada em três containers Docker. As mensagens são gravad
 ## Fluxo da aplicação
 
 ```mermaid
-flowchart TD
-    Cliente["Cliente HTTP"] --> App1["app1 - localhost:5001"]
-    Cliente --> App2["app2 - localhost:5002"]
-    Cliente --> App3["app3 - localhost:5003"]
-
-    App1 --> Armazenamento[("Volume compartilhado - /data/messages.jsonl")]
-    App2 --> Armazenamento
-    App3 --> Armazenamento
-
-    App1 -->|"POST /internal/replicate"| App2
-    App1 -->|"POST /internal/replicate"| App3
-    App2 -->|"POST /internal/replicate"| App1
-    App2 -->|"POST /internal/replicate"| App3
-    App3 -->|"POST /internal/replicate"| App1
-    App3 -->|"POST /internal/replicate"| App2
-
-    App1 --> Log1["/data/logs/app1.log"]
-    App2 --> Log2["/data/logs/app2.log"]
-    App3 --> Log3["/data/logs/app3.log"]
+flowchart LR
+    Cliente["Cliente"] -->|"POST /send"| Origem["Container de origem\napp1, app2 ou app3"]
+    Origem -->|"Grava mensagem"| Volume[("Volume compartilhado\n/data/messages.jsonl")]
+    Origem -->|"Replica"| Outros["Outros dois containers"]
+    Outros -->|"Gravam a mensagem"| Volume
+    Origem --> LogOrigem["Log da origem"]
+    Outros --> LogsOutros["Logs dos outros containers"]
 ```
 
-Ao receber um `POST /send`, a instância de origem grava a mensagem no volume compartilhado e envia uma cópia para as outras duas instâncias. Cada container registra seus próprios eventos no arquivo de log correspondente.
+Ao receber um `POST /send`, o container que recebe a requisição grava a mensagem no volume compartilhado, replica o conteúdo para os outros dois containers e registra o evento em seu próprio log. Os containers que recebem a réplica também gravam seus eventos nos respectivos logs.
 
 ## Estrutura
 
