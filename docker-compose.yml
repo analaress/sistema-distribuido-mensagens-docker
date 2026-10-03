@@ -1,0 +1,49 @@
+services:
+  app1:
+    build:
+      context: ./app
+    environment:
+      NOME_SERVICO: app1
+      PORTA_APLICACAO: 5000
+      SERVICOS_REPLICACAO: app2,app3
+    ports:
+      - "5001:5000"
+    volumes:
+      - mensagens_compartilhadas:/data
+    networks:
+      - rede_mensagens
+
+  app2:
+    build:
+      context: ./app
+    environment:
+      NOME_SERVICO: app2
+      PORTA_APLICACAO: 5000
+      SERVICOS_REPLICACAO: app1,app3
+    ports:
+      - "5002:5000"
+    volumes:
+      - mensagens_compartilhadas:/data
+    networks:
+      - rede_mensagens
+
+  app3:
+    build:
+      context: ./app
+    environment:
+      NOME_SERVICO: app3
+      PORTA_APLICACAO: 5000
+      SERVICOS_REPLICACAO: app1,app2
+    ports:
+      - "5003:5000"
+    volumes:
+      - mensagens_compartilhadas:/data
+    networks:
+      - rede_mensagens
+
+volumes:
+  mensagens_compartilhadas:
+
+networks:
+  rede_mensagens:
+    driver: bridge
