@@ -37,6 +37,58 @@ Pré-requisitos: Docker com Docker Compose e, para executar `test.sh`, `curl` e 
 docker compose up -d --build
 ```
 
+Esse comando continua sendo o fluxo recomendado para Docker normal.
+
+## Como executar no Docker Swarm
+
+O Swarm não faz `build` a partir de `docker-stack.yml`. Para testar em um
+único nó, acesse o projeto pelo WSL e execute na ordem:
+
+```bash
+cd /mnt/c/Users/User/Downloads/sistema-distribuido-mensagens-docker
+```
+
+Se o Swarm ainda não estiver inicializado:
+
+```bash
+docker swarm init
+```
+
+Marque o nó atual para receber os serviços:
+
+```bash
+docker node ls
+docker node update --label-add mensagens_storage=true $(docker node ls -q | head -n 1)
+```
+
+Construa a imagem e implante a stack:
+
+```bash
+docker build -t mensagens-app:1.0 ./app
+docker stack deploy -c docker-stack.yml mensagens
+```
+
+Verifique o resultado:
+
+```bash
+docker stack services mensagens
+docker stack ps mensagens
+```
+
+Para um cluster com mais de um nó, publique a imagem em um registry acessível
+por todos os nós e informe-a no deploy:
+
+```bash
+docker build -t SEU_USUARIO/mensagens-app:1.0 ./app
+docker push SEU_USUARIO/mensagens-app:1.0
+IMAGE_NAME=SEU_USUARIO/mensagens-app:1.0 \
+  docker stack deploy -c docker-stack.yml mensagens
+```
+
+O arquivo `docker-stack.yml` fixa os três serviços no nó marcado porque o
+volume nomeado usa o driver local. Para distribuir os serviços entre vários
+nós, substitua esse volume por NFS ou por um volume plugin compartilhado.
+
 Verifique o funcionamento:
 
 ```bash
